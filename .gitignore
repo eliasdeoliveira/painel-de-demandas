@@ -1,0 +1,46 @@
+# ─── Documentos de entrada do desafio (não versionar) ──────────────────────────
+# Currículos e enunciado ficam no disco, mas fora do repositório entregue.
+Curriculo*.pdf
+Teste Técnico - Zeeway.pdf
+descrição da vaga.txt
+
+# ─── Python / Backend ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.db
+*.sqlite
+*.sqlite3
+
+# ─── Node / Frontend ───────────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+build/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.pnpm-debug.log*
+npm-debug.log*
+yarn-error.log*
+
+# ─── Variáveis de ambiente (nunca versionar segredos) ──────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── Editores e ferramentas ────────────────────────────────────────────────────
+.vscode/
+.idea/
+# Configuração local do Claude Code, sem relação com o projeto entregue.
+.claude/
+.DS_Store
+Thumbs.db
