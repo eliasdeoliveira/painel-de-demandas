@@ -19,7 +19,15 @@ RUN npm run build
 # ─── Execução ──────────────────────────────────────────────────────────────────
 FROM node:24-alpine AS runner
 WORKDIR /app
-ENV NODE_ENV=production
+
+# O servidor do modo standalone escuta em `process.env.HOSTNAME || '0.0.0.0'`, e
+# o Docker define HOSTNAME como o id do contêiner: sem fixar o valor, o Next
+# atende em uma interface só. Publicando portas o problema passa despercebido,
+# mas atrás de um proxy reverso o contêiner fica em mais de uma rede e o proxy
+# tenta justamente o endereço em que ninguém está escutando.
+ENV NODE_ENV=production \
+    HOSTNAME=0.0.0.0 \
+    PORT=3000
 
 # O projeto não tem pasta `public/`: o favicon segue a convenção do App Router,
 # em `src/app/`. Ao adicionar arquivos estáticos, copie `/app/public` também.
