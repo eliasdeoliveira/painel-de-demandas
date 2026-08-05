@@ -168,7 +168,7 @@ cd backend && python -m pytest
 cd frontend && npm test
 ```
 
-Situação atual: **64 testes no backend** e **56 no frontend**, todos passando.
+Situação atual: **74 testes no backend** e **56 no frontend**, todos passando.
 
 Para rodar a mesma suíte do backend contra PostgreSQL, suba um banco
 descartável e aponte `TEST_DATABASE_URL` para ele:
@@ -226,7 +226,16 @@ bloqueado pelo navegador como conteúdo misto. A página aparece, a lista fica
 vazia e o erro só existe no console.
 
 **CORS precisa do domínio real.** O padrão é `http://localhost:3000`; sem trocar
-pelo domínio público, o navegador descarta as respostas da API.
+pelo domínio público, o navegador descarta as respostas da API. A variável
+aceita várias origens separadas por vírgula, então dá para liberar o domínio
+publicado e a execução local ao mesmo tempo:
+
+```bash
+CORS_ALLOWED_ORIGINS=https://exemplo-frontend.seudominio.com,http://localhost:3000
+```
+
+A comparação é exata: protocolo, domínio e porta precisam bater. `http` e
+`https` do mesmo domínio são origens diferentes.
 
 ### Exemplo com proxy reverso
 
