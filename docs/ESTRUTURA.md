@@ -285,7 +285,7 @@ interface sem depender de rede.
 
 `TEST_DATABASE_URL` troca o banco usado pelos testes. Sem a variável, roda
 SQLite em memória: rápido e sem exigir nenhum serviço de quem só quer executar a
-suíte. Apontando para um PostgreSQL, os **mesmos 64 testes** rodam contra o
+suíte. Apontando para um PostgreSQL, os **mesmos 74 testes** rodam contra o
 banco de produção.
 
 Isso responde à objeção óbvia de desenvolver em um banco e entregar em outro.

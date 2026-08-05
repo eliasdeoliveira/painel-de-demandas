@@ -84,7 +84,7 @@ A pontuação enviada pelo cliente é ignorada: quem calcula é sempre o servido
 | Produção | **PostgreSQL** | Persistência real em provedor gerenciado |
 
 Nada no código conhece o dialeto: trocar de banco é trocar a `DATABASE_URL`.
-Isso não é uma promessa do README — **os mesmos 64 testes rodam nos dois bancos,
+Isso não é uma promessa do README — **os mesmos 74 testes rodam nos dois bancos,
 e as migrations sobem e descem em ambos.** Como verificar está em
 [Testes](#testes).
 
@@ -231,7 +231,7 @@ aceita várias origens separadas por vírgula, então dá para liberar o domíni
 publicado e a execução local ao mesmo tempo:
 
 ```bash
-CORS_ALLOWED_ORIGINS=https://exemplo-frontend.seudominio.com,http://localhost:3000
+CORS_ALLOWED_ORIGINS=https://painel.seu-dominio.com,http://localhost:3000
 ```
 
 A comparação é exata: protocolo, domínio e porta precisam bater. `http` e
@@ -242,8 +242,8 @@ A comparação é exata: protocolo, domínio e porta precisam bater. `http` e
 ```bash
 FRONTEND_PORTS=127.0.0.1:8100:3000
 BACKEND_PORTS=127.0.0.1:8101:8000
-NEXT_PUBLIC_API_URL=https://exemplo-backend.seudominio.com/api/v1
-CORS_ALLOWED_ORIGINS=https://exemplo-frontend.seudominio.com
+NEXT_PUBLIC_API_URL=https://api.seu-dominio.com/api/v1
+CORS_ALLOWED_ORIGINS=https://painel.seu-dominio.com
 POSTGRES_PASSWORD=uma-senha-forte
 ```
 
@@ -416,8 +416,8 @@ feita em quatro frentes:
    percorrido no navegador: cadastro, cálculo da prioridade, ordenação, filtros,
    busca, troca de status e remoção — conferindo as respostas da API a cada
    passo.
-2. **Testes automatizados.** 79 testes escritos e executados, cobrindo a regra de
-   prioridade, os services, os endpoints e os componentes de interface.
+2. **Testes automatizados.** 130 testes escritos e executados, cobrindo a regra
+   de prioridade, os services, os endpoints e os componentes de interface.
 3. **Ferramentas de verificação.** `ruff` no backend; `eslint`, `tsc --noEmit` e
    `next build` no frontend, todos limpos. A aplicação também foi subida com
    `docker compose up --build` e exercitada dentro dos contêineres.
@@ -456,7 +456,6 @@ retorno no escopo do teste.
 
 ## 8. Tempo dedicado
 
-<!-- Confira e ajuste este valor antes de enviar. -->
 Aproximadamente **8 horas**, distribuídas em:
 
 | Etapa | Tempo aproximado |
