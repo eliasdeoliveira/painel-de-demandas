@@ -11,7 +11,11 @@ services:
       POSTGRES_PASSWORD: zeeway
       POSTGRES_DB: zeeway
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # A partir do PostgreSQL 18 as imagens guardam os dados em um subdiretório
+      # por versão principal, então o volume monta o diretório pai. Montar em
+      # /var/lib/postgresql/data, como se fazia até a 17, faz o contêiner
+      # recusar iniciar.
+      - postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U zeeway -d zeeway"]
       interval: 5s
