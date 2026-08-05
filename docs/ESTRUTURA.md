@@ -166,7 +166,7 @@ frontend/src/
 │   ├── components/ui/            componentes shadcn/ui
 │   ├── hooks/                    useDebouncedValue
 │   ├── lib/                      cn, formatação de data
-│   ├── providers/                QueryProvider
+│   ├── providers/                QueryProvider e ThemeProvider
 │   ├── services/                 cliente Axios e leitura de erro da API
 │   └── types/                    envelope de paginação
 └── test/                         fábricas e render com providers
@@ -237,6 +237,15 @@ status, com variantes para tema claro e escuro. Selo, seletor e card de resumo
 leem de lá, de modo que "Em andamento" seja sempre o mesmo azul nos três. Foi o
 que permitiu remover uma redundância: o seletor carrega a própria cor, então não
 existe mais um selo ao lado repetindo a mesma palavra.
+
+**O tema segue o sistema operacional, sem seletor na interface.**
+As variantes `dark:` do Tailwind dependem da classe `.dark` em um ancestral, e
+quem a aplica é o `ThemeProvider` de `shared/providers/`. Sem ele o bloco `.dark`
+do CSS e todas as variantes ficariam inertes — e o `Toaster` resolveria a
+preferência por conta própria, deixando os avisos escuros sobre uma página clara.
+Não há botão de alternância porque a promessa é acompanhar o sistema, e o
+`<html>` leva `suppressHydrationWarning` porque a classe é escrita antes da
+hidratação.
 
 **O histórico só é buscado quando o diálogo abre.**
 A consulta nasce com `enabled: false`. Carregar a linha do tempo de todas as

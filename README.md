@@ -212,7 +212,7 @@ acima.
 | `POSTGRES_PASSWORD` | Senha do banco do compose |
 | `DATABASE_URL` | Só se usar um banco gerenciado externo |
 
-### Três armadilhas que derrubam este deploy
+### Quatro armadilhas que derrubam este deploy
 
 **`NEXT_PUBLIC_API_URL` é embutida no build, não lida em execução.** Quem chama
 a API é o navegador de quem acessa o painel, então o valor precisa ser a URL
@@ -236,6 +236,16 @@ CORS_ALLOWED_ORIGINS=https://painel.seu-dominio.com,http://localhost:3000
 
 A comparação é exata: protocolo, domínio e porta precisam bater. `http` e
 `https` do mesmo domínio são origens diferentes.
+
+**O contêiner precisa escutar em `0.0.0.0`.** O servidor do Next em modo
+standalone usa `process.env.HOSTNAME` como endereço de escuta, e o Docker define
+essa variável como o id do contêiner — ou seja, ele atende em uma interface só.
+Publicando portas isso não aparece, porque o redirecionamento do Docker vai para
+o IP primário do contêiner; atrás de um proxy reverso, sim: o contêiner fica
+ligado a mais de uma rede, o proxy tenta a outra e encontra a porta muda. A
+página fica em branco e não há erro em log nenhum. O
+[`Dockerfile`](frontend/Dockerfile) do frontend já fixa `HOSTNAME=0.0.0.0` por
+isso — está aqui porque o sintoma é difícil de diagnosticar sem conhecer a causa.
 
 ### Exemplo com proxy reverso
 
@@ -427,7 +437,8 @@ feita em quatro frentes:
 
 **O que a revisão pegou**
 
-Vale registrar dois exemplos concretos, porque mostram por que a revisão importa:
+Vale registrar alguns exemplos concretos, porque mostram por que a revisão
+importa:
 
 - **IDs duplicados no DOM.** Os campos do formulário e os da barra de filtros
   usavam os mesmos `id` (`impact`, `status`, `requester`). Com o diálogo aberto,
@@ -444,10 +455,16 @@ Vale registrar dois exemplos concretos, porque mostram por que a revisão import
   classe. No Python 3.14 — a versão da máquina de desenvolvimento — as
   anotações são avaliadas sob demanda e nada acontece; no 3.13, avaliadas na
   criação da classe, a anotação `list[DemandStatusChange]` de um método
-  seguinte fazia a importação do módulo falhar e a API sequer subia. Os 58
-  testes passavam localmente: **quem pegou foi o contêiner**, que roda 3.13. O
+  seguinte fazia a importação do módulo falhar e a API sequer subia. A suíte
+  inteira passava localmente: **quem pegou foi o contêiner**, que roda 3.13. O
   método foi renomeado e um teste passou a barrar nomes de builtin em service e
   repository, já que a máquina de desenvolvimento não reproduz a falha.
+- **Tema escuro que nunca ligava.** O CSS declarava a variante escura como
+  `&:is(.dark *)`, mas nada aplicava a classe `.dark`: faltava o provider. Na
+  prática, o bloco `.dark` e todas as variantes eram código morto — e como o
+  `Toaster` resolve a preferência por conta própria, num sistema em modo escuro
+  os avisos apareciam escuros sobre uma página clara. Nenhum teste ou linter
+  acusa isso, e a documentação afirmava o contrário em três lugares.
 
 Além disso, algumas sugestões foram descartadas por adicionarem complexidade sem
 retorno no escopo do teste.
@@ -477,7 +494,7 @@ Aproximadamente **8 horas**, distribuídas em:
 │   ├── app/modules/      módulos de negócio (hoje: demands)
 │   └── migrations/       Alembic
 ├── frontend/             Painel em Next.js (organizado por feature)
-│   └── src/features/     features (hoje: demands)
+│   ├── src/features/     features (hoje: demands)
 │   └── src/shared/       o que é usado por mais de um lugar
 ├── docs/
 │   ├── ESTRUTURA.md      arquitetura do código, camadas e decisões
