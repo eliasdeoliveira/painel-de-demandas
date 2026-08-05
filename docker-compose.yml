@@ -1,6 +1,8 @@
 services:
   postgres:
-    image: postgres:17-alpine
+    # Mesma versão principal usada em produção, para que o compose sirva de
+    # ambiente de paridade e não só de conveniência.
+    image: postgres:18-alpine
     environment:
       # Credenciais locais deste compose, sem valor fora dele: o banco não é
       # exposto para fora da rede interna. A URL de produção entra por variável
