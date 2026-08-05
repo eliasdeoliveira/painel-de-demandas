@@ -1,0 +1,17 @@
+[tool.pytest.ini_options]
+# Os testes ficam junto do módulo que exercitam, para que cada módulo do
+# monólito seja uma unidade completa.
+testpaths = ["app"]
+python_files = ["test_*.py"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+# Migrations são geradas pelo Alembic; reescrevê-las só para agradar o linter
+# dificultaria comparar o arquivo com o que a ferramenta produz.
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
