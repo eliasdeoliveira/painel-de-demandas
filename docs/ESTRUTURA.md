@@ -244,6 +244,14 @@ linhas da tabela seria uma requisição por demanda, para um dado que quase nunc
 é aberto. A chave de cache fica sob `demandKeys.all`, então uma troca de status
 já invalida o histórico daquela demanda sem nenhum código extra.
 
+**A paginação se recupera de uma página que deixou de existir.**
+Remover a única demanda da última página faz o total encolher sem que a página
+corrente mude — e o servidor devolve uma lista vazia. Sem tratamento, o painel
+ficava preso ali anunciando que não havia nenhuma demanda cadastrada, com as
+demais nas páginas anteriores. Como o envelope traz `totalPages`, dá para voltar
+para a última página válida sem uma consulta extra, e o estado vazio não é
+exibido enquanto a correção acontece.
+
 **Busca com debounce, não a cada tecla.**
 O campo responde imediatamente na interface, mas só chega à API após uma pausa.
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/shared/components/empty-state";
 import { ErrorState } from "@/shared/components/error-state";
@@ -21,6 +21,7 @@ import {
 import { useDemands, useDemandSummary } from "@/features/demands/hooks/use-demands";
 import type { DemandListFilters } from "@/features/demands/types/demand";
 import { hasActiveFilters } from "@/features/demands/utils/has-active-filters";
+import { findLastValidPage, isPageOutOfRange } from "@/features/demands/utils/page-recovery";
 
 export function DemandsPanel() {
   const [filters, setFilters] = useState<DemandListFilters>(DEFAULT_DEMAND_FILTERS);
@@ -45,6 +46,21 @@ export function DemandsPanel() {
     setFilters((current) => ({ ...current, ...changes, page: changes.page ?? 1 }));
   }
 
+  // Remover a única demanda da última página deixaria o usuário parado em uma
+  // página que não existe mais. O servidor informa quantas páginas restaram,
+  // então dá para voltar para a última válida sem uma consulta extra.
+  const currentPage = demandsQuery.data;
+  useEffect(() => {
+    if (!currentPage || !isPageOutOfRange(currentPage)) {
+      return;
+    }
+
+    const lastValidPage = findLastValidPage(currentPage);
+    setFilters((current) =>
+      current.page === lastValidPage ? current : { ...current, page: lastValidPage },
+    );
+  }, [currentPage]);
+
   function renderDemandList() {
     if (demandsQuery.isError) {
       return (
@@ -61,6 +77,12 @@ export function DemandsPanel() {
     }
 
     const page = demandsQuery.data;
+
+    // A correção da página já está a caminho; anunciar "nenhuma demanda" aqui
+    // seria mentira, porque elas estão nas páginas anteriores.
+    if (isPageOutOfRange(page)) {
+      return <DemandTableSkeleton />;
+    }
 
     if (page.items.length === 0) {
       return hasActiveFilters(appliedFilters) ? (

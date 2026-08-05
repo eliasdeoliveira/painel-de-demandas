@@ -131,6 +131,48 @@ describe("DemandsPanel", () => {
     });
   });
 
+  it("volta para a última página válida ao remover o último item dela", async () => {
+    // Uma demanda por página. O usuário navega até a segunda e remove a única
+    // demanda de lá: a página pedida deixa de existir, mas a primeira continua
+    // com conteúdo. Antes da correção, o painel ficava preso em uma página
+    // vazia anunciando que não havia nenhuma demanda cadastrada.
+    let remainingDemands = 2;
+    vi.mocked(demandsApi.fetchDemands).mockImplementation(async (filters) => {
+      const totalPages = Math.max(1, remainingDemands);
+      const isSecondPage = filters.page > 1;
+      const items =
+        isSecondPage && remainingDemands < 2
+          ? []
+          : [
+              buildDemand(
+                isSecondPage
+                  ? { id: 2, title: "Segunda demanda" }
+                  : { id: 1, title: "Primeira demanda" },
+              ),
+            ];
+
+      return { items, page: filters.page, limit: 1, total: remainingDemands, totalPages };
+    });
+    vi.mocked(demandsApi.deleteDemand).mockImplementation(async () => {
+      remainingDemands = 1;
+    });
+
+    const user = userEvent.setup();
+    renderWithProviders(<DemandsPanel />);
+
+    await screen.findByRole("table");
+    await user.click(screen.getByRole("button", { name: "Próxima" }));
+    expect(await screen.findByText("Página 2 de 2")).toBeInTheDocument();
+
+    const table = screen.getByRole("table");
+    await user.click(within(table).getByRole("button", { name: /Remover demanda/ }));
+    await user.click(await screen.findByRole("button", { name: "Remover" }));
+
+    expect(await screen.findByText("Página 1 de 1")).toBeInTheDocument();
+    expect(screen.queryByText("Nenhuma demanda cadastrada")).not.toBeInTheDocument();
+    expect(screen.queryByText("Nenhuma demanda encontrada")).not.toBeInTheDocument();
+  });
+
   it("remove a linha da lista antes da resposta do servidor", async () => {
     vi.mocked(demandsApi.deleteDemand).mockReturnValue(pending<void>());
     const user = userEvent.setup();

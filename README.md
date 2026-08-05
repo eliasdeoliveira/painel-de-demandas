@@ -164,7 +164,7 @@ cd backend && python -m pytest
 cd frontend && npm test
 ```
 
-Situação atual: **64 testes no backend** e **50 no frontend**, todos passando.
+Situação atual: **64 testes no backend** e **56 no frontend**, todos passando.
 
 Para rodar a mesma suíte do backend contra PostgreSQL, suba um banco
 descartável e aponte `TEST_DATABASE_URL` para ele:
