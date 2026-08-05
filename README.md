@@ -119,6 +119,10 @@ backend. Os dados ficam em volume nomeado, então sobrevivem a
 
 Nenhum serviço externo é necessário: o Postgres do compose é local.
 
+Portas, domínios e banco são configuráveis por variáveis de ambiente, com
+padrões que reproduzem exatamente o descrito acima — ver
+[`.env.example`](.env.example) e a seção [Deploy](#deploy).
+
 As portas 3000 e 8000 precisam estar livres — se você já estiver rodando a
 aplicação localmente, pare antes de subir os contêineres.
 
@@ -190,6 +194,53 @@ cd backend && ruff check .
 ```bash
 cd frontend && npm run lint && npx tsc --noEmit && npm run build
 ```
+
+---
+
+## Deploy
+
+O mesmo `docker-compose.yml` serve para a execução local e para o servidor: o
+que muda são variáveis de ambiente, listadas em [`.env.example`](.env.example).
+Nenhuma delas é obrigatória — sem nenhuma, o comportamento é o documentado
+acima.
+
+| Variável | Para quê |
+| --- | --- |
+| `FRONTEND_PORTS` / `BACKEND_PORTS` | Mapeamento de portas. Atrás de proxy reverso no mesmo host, prefira `127.0.0.1:8100:3000` para não expor o contêiner direto na internet |
+| `NEXT_PUBLIC_API_URL` | URL pública da API |
+| `CORS_ALLOWED_ORIGINS` | Domínio público do painel |
+| `POSTGRES_PASSWORD` | Senha do banco do compose |
+| `DATABASE_URL` | Só se usar um banco gerenciado externo |
+
+### Três armadilhas que derrubam este deploy
+
+**`NEXT_PUBLIC_API_URL` é embutida no build, não lida em execução.** Quem chama
+a API é o navegador de quem acessa o painel, então o valor precisa ser a URL
+pública. Em plataformas como Coolify, Vercel ou Render, ela tem que ser marcada
+como variável de **build** — se ficar apenas como runtime, a imagem sai com o
+padrão embutido e o sintoma engana: a página carrega, mas nenhuma requisição
+funciona.
+
+**Protocolo tem que casar.** Um painel em `https` chamando uma API em `http` é
+bloqueado pelo navegador como conteúdo misto. A página aparece, a lista fica
+vazia e o erro só existe no console.
+
+**CORS precisa do domínio real.** O padrão é `http://localhost:3000`; sem trocar
+pelo domínio público, o navegador descarta as respostas da API.
+
+### Exemplo com proxy reverso
+
+```bash
+FRONTEND_PORTS=127.0.0.1:8100:3000
+BACKEND_PORTS=127.0.0.1:8101:8000
+NEXT_PUBLIC_API_URL=https://exemplo-backend.seudominio.com/api/v1
+CORS_ALLOWED_ORIGINS=https://exemplo-frontend.seudominio.com
+POSTGRES_PASSWORD=uma-senha-forte
+```
+
+O proxy aponta o domínio do painel para `127.0.0.1:8100` e o da API para
+`127.0.0.1:8101`, cuidando do TLS nos dois. As migrations continuam rodando
+sozinhas na subida do contêiner do backend.
 
 ---
 
