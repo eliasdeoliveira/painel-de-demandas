@@ -1,14 +1,31 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      # Credenciais locais deste compose, sem valor fora dele: o banco não é
+      # exposto para fora da rede interna. A URL de produção entra por variável
+      # de ambiente no provedor, nunca neste arquivo.
+      POSTGRES_USER: zeeway
+      POSTGRES_PASSWORD: zeeway
+      POSTGRES_DB: zeeway
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zeeway -d zeeway"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   backend:
     build: ./backend
     ports:
       - "8000:8000"
     environment:
-      # Quatro barras: caminho absoluto dentro do contêiner.
-      DATABASE_URL: sqlite:////app/data/zeeway.db
+      DATABASE_URL: postgresql://zeeway:zeeway@postgres:5432/zeeway
       CORS_ALLOWED_ORIGINS: http://localhost:3000
-    volumes:
-      - backend-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       # Usa o próprio Python da imagem para não precisar instalar curl.
       test:
@@ -37,4 +54,4 @@ services:
         condition: service_healthy
 
 volumes:
-  backend-data:
+  postgres-data:

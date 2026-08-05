@@ -58,7 +58,7 @@ A pontuação enviada pelo cliente é ignorada: quem calcula é sempre o servido
 | SQLAlchemy 2 | ORM, no estilo declarativo tipado |
 | Alembic | Versionamento do schema |
 | Pydantic 2 | Validação de entrada e contrato de saída |
-| SQLite | Banco de dados |
+| SQLite / PostgreSQL | Banco de dados — ver abaixo |
 | pytest | Testes |
 | Ruff | Lint |
 
@@ -74,10 +74,23 @@ A pontuação enviada pelo cliente é ignorada: quem calcula é sempre o servido
 | Axios | Cliente HTTP |
 | Vitest + Testing Library + user-event | Testes |
 
-**Por que SQLite:** o teste permite escolher, e a aplicação é de instância
-única, sem concorrência de escrita relevante. SQLite roda sem nenhum serviço
-externo, o que torna a execução local imediata. A troca para PostgreSQL é uma
-mudança de `DATABASE_URL`, já que nada no código depende do dialeto.
+### Banco de dados por ambiente
+
+| Ambiente | Banco | Por quê |
+| --- | --- | --- |
+| Execução local | **SQLite** | Roda sem nenhum serviço externo: quem clona o repositório sobe a API sem instalar banco e sem Docker |
+| `docker compose up` | **PostgreSQL** | Paridade com produção com um comando, sem instalar nada na máquina |
+| Testes | **SQLite** em memória (padrão) e **PostgreSQL** (verificação) | Rápido no dia a dia, e com a garantia de que o código não depende de dialeto |
+| Produção | **PostgreSQL** | Persistência real em provedor gerenciado |
+
+Nada no código conhece o dialeto: trocar de banco é trocar a `DATABASE_URL`.
+Isso não é uma promessa do README — **os mesmos 64 testes rodam nos dois bancos,
+e as migrations sobem e descem em ambos.** Como verificar está em
+[Testes](#testes).
+
+O esquema `postgresql://` que os provedores entregam é traduzido
+automaticamente para o dialeto do driver instalado (psycopg 3), então a URL
+pode ser colada como vem do painel.
 
 ---
 
@@ -98,9 +111,13 @@ docker compose up --build
 - API: <http://localhost:8000>
 - Swagger: <http://localhost:8000/docs>
 
-As migrations rodam automaticamente na subida do contêiner do backend, e o
-frontend só inicia depois que o healthcheck do backend passa. Os dados ficam em
-um volume nomeado, então sobrevivem a `docker compose restart`.
+Sobem três serviços: **PostgreSQL**, backend e frontend, em ordem. O backend só
+inicia depois que o Postgres responde ao `pg_isready`, e o frontend só depois
+que o healthcheck do backend passa. As migrations rodam no entrypoint do
+backend. Os dados ficam em volume nomeado, então sobrevivem a
+`docker compose restart`.
+
+Nenhum serviço externo é necessário: o Postgres do compose é local.
 
 As portas 3000 e 8000 precisam estar livres — se você já estiver rodando a
 aplicação localmente, pare antes de subir os contêineres.
@@ -148,6 +165,21 @@ cd frontend && npm test
 ```
 
 Situação atual: **64 testes no backend** e **50 no frontend**, todos passando.
+
+Para rodar a mesma suíte do backend contra PostgreSQL, suba um banco
+descartável e aponte `TEST_DATABASE_URL` para ele:
+
+```bash
+docker run --rm -d --name pg-teste -e POSTGRES_USER=zeeway -e POSTGRES_PASSWORD=zeeway -e POSTGRES_DB=zeeway -p 55432:5432 postgres:17-alpine
+```
+
+```bash
+cd backend && TEST_DATABASE_URL=postgresql://zeeway:zeeway@localhost:55432/zeeway python -m pytest
+```
+
+No Windows (PowerShell), defina a variável com
+`$env:TEST_DATABASE_URL = "postgresql://zeeway:zeeway@localhost:55432/zeeway"`
+antes do `pytest`.
 
 ### Verificações de qualidade
 
@@ -265,8 +297,12 @@ registrado, e remover a demanda leva o histórico junto por cascade.
   o estado da busca não é compartilhável por link.
 - **Paginação por `LIMIT/OFFSET`.** Simples e adequada ao volume esperado;
   degradaria em tabelas muito grandes com páginas muito distantes.
-- **SQLite trava a escrita sob concorrência alta.** Irrelevante no escopo do
-  teste, relevante em produção com várias instâncias.
+- **A suíte roda em SQLite por padrão, e a produção usa PostgreSQL.** A
+  diferença é coberta rodando os mesmos testes contra os dois bancos, mas isso
+  é um passo manual: sem CI, nada obriga a repetição a cada mudança.
+- **A ordenação por título depende da collation do banco.** SQLite compara byte
+  a byte, PostgreSQL usa a locale — títulos acentuados podem sair em ordem
+  ligeiramente diferente entre os dois ambientes.
 - **Busca por título apenas**, sem a descrição e sem acento-insensibilidade.
 
 ---
@@ -287,9 +323,10 @@ registrado, e remover a demanda leva o histórico junto por cascade.
   funcionando.
 - Busca também na descrição, com normalização de acentos.
 - Autenticação e autorização, registrando quem criou e quem alterou cada demanda.
-- CI no GitHub Actions rodando lint, testes e build a cada push.
+- CI no GitHub Actions rodando lint, testes e build a cada push — incluindo a
+  suíte do backend contra PostgreSQL, hoje um passo manual.
 - Cobertura de testes medida e com limite mínimo.
-- Migração para PostgreSQL e paginação por cursor, se o volume justificar.
+- Paginação por cursor, se o volume justificar.
 - Deploy: frontend na Vercel e backend em contêiner, com o banco gerenciado.
 
 ---

@@ -13,10 +13,17 @@ settings = get_settings()
 # O FastAPI executa endpoints síncronos em um pool de threads, então a checagem
 # precisa ser desligada. Cada requisição usa sua própria sessão, então não há
 # compartilhamento real de conexão entre threads.
-_is_sqlite = settings.database_url.startswith("sqlite")
+_is_sqlite = settings.sqlalchemy_url.startswith("sqlite")
 _connect_args = {"check_same_thread": False} if _is_sqlite else {}
 
-engine = create_engine(settings.database_url, connect_args=_connect_args)
+engine = create_engine(
+    settings.sqlalchemy_url,
+    connect_args=_connect_args,
+    # Provedores gerenciados encerram conexões ociosas sem avisar o cliente.
+    # Sem o teste prévio, a primeira requisição após um período parado falharia
+    # com a conexão já fechada do outro lado.
+    pool_pre_ping=True,
+)
 
 SessionFactory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 

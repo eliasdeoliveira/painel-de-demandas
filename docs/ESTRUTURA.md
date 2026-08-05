@@ -94,6 +94,22 @@ com índice, em vez de carregar tudo em memória para ordenar. O risco de um
 valor derivado ficar defasado é contido pelo `service`, que sempre recalcula a
 partir do estado final da demanda.
 
+**Nenhuma camada conhece o dialeto do banco.**
+O repositório usa apenas construções do SQLAlchemy, sem SQL específico de
+fornecedor. A data em UTC é resolvida por um tipo de coluna próprio, e o modo
+batch das migrations — contorno para o suporte limitado do SQLite a
+`ALTER TABLE` — fica restrito ao SQLite.
+
+Isso é o que permite SQLite no desenvolvimento e PostgreSQL em produção sem
+manter dois caminhos de código. E não é uma suposição: a suíte inteira roda
+contra os dois bancos, e as migrations sobem e descem em ambos.
+
+O único ponto que precisa de tradução é o esquema da URL. Provedores entregam
+`postgresql://`, que o SQLAlchemy associa ao psycopg2; o driver usado aqui é o
+psycopg 3, cujo dialeto é `postgresql+psycopg`. A conversão acontece em
+`core/config.py`, para que a URL possa ser colada como vem do painel do
+provedor sem quebrar o deploy por um motivo difícil de diagnosticar.
+
 **Migrations explícitas, com a aplicação recusando subir sem elas.**
 Migrar automaticamente dentro do `lifespan` seria conveniente, mas com mais de
 uma instância faria réplicas concorrerem pelo mesmo schema na subida. Então o
@@ -256,6 +272,21 @@ está listado como melhoria no README.
 Os testes do backend rodam contra um SQLite em memória, recriado a cada teste.
 Os do frontend simulam o módulo de API, para exercitar o comportamento da
 interface sem depender de rede.
+
+### A mesma suíte nos dois bancos
+
+`TEST_DATABASE_URL` troca o banco usado pelos testes. Sem a variável, roda
+SQLite em memória: rápido e sem exigir nenhum serviço de quem só quer executar a
+suíte. Apontando para um PostgreSQL, os **mesmos 64 testes** rodam contra o
+banco de produção.
+
+Isso responde à objeção óbvia de desenvolver em um banco e entregar em outro.
+Em vez de padronizar tudo em PostgreSQL — o que obrigaria quem clona o
+repositório a subir um banco para rodar um CRUD —, a paridade é verificada.
+O comando está no README.
+
+A verificação usa um PostgreSQL descartável, nunca o banco de produção: as
+fixtures criam e apagam as tabelas a cada teste.
 
 ### Por que existe um teste sobre nomes de método
 

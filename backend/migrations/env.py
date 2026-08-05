@@ -21,7 +21,7 @@ if config.config_file_name is not None:
 
 # A URL vem das configurações da aplicação, e não do alembic.ini, para que
 # exista uma única fonte de verdade e nenhuma credencial no arquivo versionado.
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+config.set_main_option("sqlalchemy.url", get_settings().sqlalchemy_url)
 
 target_metadata = Base.metadata
 
@@ -66,9 +66,10 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             render_item=render_item,
-            # O SQLite não suporta a maior parte dos ALTER TABLE; o modo batch
-            # recria a tabela quando necessário.
-            render_as_batch=True,
+            # O modo batch recria a tabela para contornar o suporte limitado do
+            # SQLite a ALTER TABLE. Em bancos que suportam ALTER de verdade ele
+            # só geraria ruído nas migrations, então fica restrito ao SQLite.
+            render_as_batch=connection.dialect.name == "sqlite",
         )
 
         with context.begin_transaction():
