@@ -10,10 +10,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# A aplicação roda como usuário comum, e o banco fica em /app/data para que o
-# volume declarado no compose sobreviva à recriação do contêiner.
+# A aplicação roda como usuário comum. No compose o banco é o PostgreSQL do
+# serviço vizinho, então nada é gravado aqui; o chown existe para o caso de a
+# imagem ser executada sem DATABASE_URL, quando o SQLite padrão precisa de
+# permissão de escrita no diretório da aplicação.
 RUN useradd --create-home --uid 1000 appuser \
-    && mkdir -p /app/data \
     && chown -R appuser:appuser /app
 USER appuser
 
